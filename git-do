@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'grit'
+require 'optparse'
+require 'logger'
+require 'fileutils'
+
+
+include Grit
+
+module Gitdo
+    class NoRepoFound < StandardError;end
+    class CLI
+        # The array of (unparsed) command-line options
+        attr_reader :action, :options, :args, :tic
+        attr_reader :git, :logger
+
+        def self.execute
+          parse(ARGV).execute!
+        end
+        
+        def self.parse(args)
+          cli = new(args)
+          cli.parse_options!
+          cli
+        end
+
+        def initialize(args)
+            @args = args.dup
+            @repo = Repo.new(find_repo('.'))
+            #TODO: working_dir is not defined when using a bare repo
+            @repo.working_dir = File.join(@repo.path, '../')
+            @logger = Logger.new(STDOUT)
+          
+            $stdout.sync = true # so that Net::SSH prompts show up
+
+            check_branch
+
+            rescue NoRepoFound
+                puts "No repo found"
+            exit
+        end
+
+        def check_branch
+            puts "Check gitdo branch:"
+            @repo.heads.each do |head|
+                if head.name == 'gitdo'
+                    return true
+                end
+            end
+            create_branch
+        end
+
+        def create_branch
+            puts "Create gitdo branch.."
+            if @repo.status.changed or @repo.status.untracked or @repo.status.added
+                puts "Caution: make your working directory clean before you do this (either stash or commit), otherwise this will lose any changes you've made to your project since the last commit."
+                exit
+            end
+            
+        end
+        
+        def parse_options! #:nodoc:      
+          if args.empty?
+            warn "Please specify at least one action to execute."
+            puts " list show new "
+            exit
+          end
+
+          @action = args.first
+        end
+    
+        def execute!
+          case action
+          when 'list':
+            puts "List items.."
+          when 'show'
+            handle_item_show
+          when 'new'
+            puts "Create new item.."
+          else
+            puts 'not a command..'
+          end
+        end
+
+        def handle_item_show
+            puts "Show an item: \##{ARGV[1]}"
+        end
+
+        def find_repo(dir)
+            full = File.expand_path(dir)
+            ENV["GIT_WORKING_DIR"] || loop do
+                return File.join(full, ".git") if File.directory?(File.join(full, ".git"))
+                raise NoRepoFound if full == full=File.dirname(full)
+            end
+        end
+    
+
+
+    end
+end
+
+Gitdo::CLI.execute
+
+#repo = Repo.new("/Users/davglass/src/local/3.x/.git")
+#puts repo.commits
+#head = repo.commits.first
+#puts head.author
+#puts head.message
+
