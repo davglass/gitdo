@@ -1,0 +1,19 @@
+h1. GitDo
+
+The goals for this little project is to:
+
+* Learn Ruby :)
+* Test out Grit: http://github.com/mojombo/grit/
+* Build a command line/repo based todo list
+** git do list
+** git do show abc123de
+** git do new "Title" => open editor to write todo
+* Grep the repo to the word TODO and list the files that the user edited
+
+h2. Repo Setup
+
+The script will create a symbolic ref called gitdo. In this repo, we will store our data.
+
+Not sure what form, YAML, XML, CSV, etc..
+
+

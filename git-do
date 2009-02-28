@@ -31,6 +31,7 @@ module Gitdo
             @repo = Repo.new(find_repo('.'))
             #TODO: working_dir is not defined when using a bare repo
             @repo.working_dir = File.join(@repo.path, '../')
+            @git = Git.new(@repo.path)
             @logger = Logger.new(STDOUT)
           
             $stdout.sync = true # so that Net::SSH prompts show up
@@ -54,11 +55,13 @@ module Gitdo
 
         def create_branch
             puts "Create gitdo branch.."
-            if @repo.status.changed or @repo.status.untracked or @repo.status.added
+            if @repo.status.changed.length > 0 or @repo.status.untracked.length > 0 or @repo.status.added.length > 0
                 puts "Caution: make your working directory clean before you do this (either stash or commit), otherwise this will lose any changes you've made to your project since the last commit."
                 exit
             end
-            
+            #Now create the hidden branch:
+            #@git.symbolicref('HEAD', 'refs/heads/gitdo')
+            @git.symbolicref(@repo.head, 'refs/heads/gitdo')
         end
         
         def parse_options! #:nodoc:      
